@@ -2,10 +2,9 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
-
 import React, { useEffect } from 'react';
 import {
-  BrowserRouter,
+  HashRouter,
   Routes,
   Route,
   useLocation,
@@ -114,10 +113,10 @@ export default function App() {
   return (
     <PreviewErrorBoundary>
       <StoreProvider>
-        <BrowserRouter>
+        <HashRouter>
           <ScrollToTop />
           <AppRoutes />
-        </BrowserRouter>
+        </HashRouter>
       </StoreProvider>
     </PreviewErrorBoundary>
   );
