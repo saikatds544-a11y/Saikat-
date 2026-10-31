@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import http from 'http';
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
@@ -7,6 +8,7 @@ import { getStorefrontBundle } from './src/server/repository.ts';
 
 async function startServer() {
   const app = express();
+  const httpServer = http.createServer(app);
   const PORT = Number(process.env.PORT) || 3000;
 
   app.use(express.json({ limit: '15mb' }));
@@ -76,9 +78,14 @@ async function startServer() {
   const isProd = process.env.NODE_ENV === 'production' && fs.existsSync(distPath);
 
   if (!isProd) {
+    const disableHmr = process.env.DISABLE_HMR === 'true';
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+        hmr: disableHmr ? false : { server: httpServer },
+        watch: disableHmr ? null : {},
+      },
       appType: 'spa',
     });
     app.use(vite.middlewares);
@@ -90,7 +97,7 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
+  httpServer.listen(PORT, '0.0.0.0', () => {
     console.log(`Maa Lakshmi Alankar server running on http://0.0.0.0:${PORT}`);
   });
 }

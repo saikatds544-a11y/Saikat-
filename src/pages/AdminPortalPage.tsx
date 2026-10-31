@@ -51,12 +51,34 @@ const ALL_ORDER_STATUSES: OrderStatus[] = [
   'Cancelled',
 ];
 
+function safeGetSession(key: string): string {
+  try {
+    return sessionStorage.getItem(key) || '';
+  } catch {
+    return '';
+  }
+}
+
+function safeSetSession(key: string, val: string): void {
+  try {
+    sessionStorage.setItem(key, val);
+  } catch {
+    // ignore in restricted iframe mode
+  }
+}
+
+function safeRemoveSession(key: string): void {
+  try {
+    sessionStorage.removeItem(key);
+  } catch {
+    // ignore in restricted iframe mode
+  }
+}
+
 export function AdminPortalPage() {
   const { refreshStorefront, settings: liveSettings } = useStore();
 
-  const [token, setToken] = useState<string>(
-    () => sessionStorage.getItem(ADMIN_TOKEN_KEY) || ''
-  );
+  const [token, setToken] = useState<string>(() => safeGetSession(ADMIN_TOKEN_KEY));
   const [adminEmail, setAdminEmail] = useState<string>('');
   const [authChecking, setAuthChecking] = useState<boolean>(Boolean(token));
 
@@ -112,7 +134,7 @@ export function AdminPortalPage() {
           headers: { Authorization: `Bearer ${activeToken}` },
         });
         if (res.status === 401) {
-          sessionStorage.removeItem(ADMIN_TOKEN_KEY);
+          safeRemoveSession(ADMIN_TOKEN_KEY);
           setToken('');
           return;
         }
@@ -149,12 +171,12 @@ export function AdminPortalPage() {
           setAdminEmail(data.email || '');
           return loadDashboard(token);
         } else {
-          sessionStorage.removeItem(ADMIN_TOKEN_KEY);
+          safeRemoveSession(ADMIN_TOKEN_KEY);
           setToken('');
         }
       })
       .catch(() => {
-        sessionStorage.removeItem(ADMIN_TOKEN_KEY);
+        safeRemoveSession(ADMIN_TOKEN_KEY);
         setToken('');
       })
       .finally(() => setAuthChecking(false));
@@ -177,7 +199,7 @@ export function AdminPortalPage() {
       if (!res.ok || !data.token) {
         throw new Error(data.error || 'Invalid credentials.');
       }
-      sessionStorage.setItem(ADMIN_TOKEN_KEY, data.token);
+      safeSetSession(ADMIN_TOKEN_KEY, data.token);
       setToken(data.token);
       setAdminEmail(data.email || loginEmail.trim());
       setLoginPassword('');
@@ -190,7 +212,7 @@ export function AdminPortalPage() {
   };
 
   const handleLogout = () => {
-    sessionStorage.removeItem(ADMIN_TOKEN_KEY);
+    safeRemoveSession(ADMIN_TOKEN_KEY);
     setToken('');
     setAdminEmail('');
   };

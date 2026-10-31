@@ -27,9 +27,50 @@ import { AdminPortalPage } from './pages/AdminPortalPage.tsx';
 function ScrollToTop() {
   const { pathname } = useLocation();
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+    try {
+      window.scrollTo(0, 0);
+    } catch {
+      // ignore in restricted webviews
+    }
   }, [pathname]);
   return null;
+}
+
+class PreviewErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; message: string }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, message: '' };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, message: error?.message || 'Unexpected rendering error' };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex flex-col items-center justify-center bg-[#FCFBF8] text-[#1C1917] p-6 text-center">
+          <h1 className="font-serif-display text-3xl font-semibold mb-2">
+            Maa Lakshmi Alankar
+          </h1>
+          <p className="text-sm text-[#57534E] max-w-md mb-4">
+            Unable to initialize storefront view: {this.state.message}
+          </p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="px-5 py-2.5 text-xs font-semibold bg-[#1C1917] text-[#FCFBF8] rounded-xl cursor-pointer"
+          >
+            Reload Storefront
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
 }
 
 function AppRoutes() {
@@ -71,11 +112,13 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <StoreProvider>
-      <BrowserRouter>
-        <ScrollToTop />
-        <AppRoutes />
-      </BrowserRouter>
-    </StoreProvider>
+    <PreviewErrorBoundary>
+      <StoreProvider>
+        <BrowserRouter>
+          <ScrollToTop />
+          <AppRoutes />
+        </BrowserRouter>
+      </StoreProvider>
+    </PreviewErrorBoundary>
   );
 }
